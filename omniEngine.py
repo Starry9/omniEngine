@@ -1,4 +1,5 @@
 import os.path
+import signal
 import config
 
 from cacher import *
@@ -27,7 +28,11 @@ if os.path.isfile(lockFile):
 
     # check if the pid is still running
     if os.path.exists('/proc/' + str(pid)):
-        logger.info('Exit: OmniEngine already running with pid: %s. Last parse started at: %s', pid, timestamp)
+        if now - datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f') >= timedelta(hours=1):
+            logger.info('OmniEngine running with pid: %s. Last parse started at: %s. last 1h, kill it', pid, timestamp)
+            os.kill(int(pid), signal.SIGTERM)
+        else:
+            logger.info('Exit: OmniEngine already running with pid: %s. Last parse started at: %s', pid, timestamp)
     else:
         logger.info('Stale OmniEngine found, no running pid: %s. Process last started at: %s', pid, timestamp)
         os.remove(lockFile)
